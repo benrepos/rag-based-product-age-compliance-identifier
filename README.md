@@ -101,6 +101,7 @@ uvicorn api.app:app --reload --port 8000
 
 Environment:
 - Put `OPENAI_API_KEY=...` in `.env` at repo root (auto‑loaded).
+- Optional header auth: set `API_KEY=...` in `.env` and pass `x-api-key: ...` on requests.
 
 Endpoints:
 - `POST /classify`
@@ -129,20 +130,9 @@ Notes:
 - Increase `k` (e.g., 15–30) for more robust retrieval on rare terms.
 - If you see boilerplate headings in evidence, the hybrid retriever will still return policy/statute chunks; use `/classify_debug` to validate.
 
-## 📊 Current Status
+## ✅ Status
 
-### ✅ Completed
-- [x] PDF text extraction (pypdf)
-- [x] Token-aware document chunking (tiktoken)
-- [x] Batched embeddings generation (OpenAI)
-- [x] Parallel processing for efficiency
-- [x] Metadata tracking (law name, section, URLs)
-
-### 🔄 In Progress
-- [ ] Vector similarity search
-- [ ] RAG query system
-- [ ] REST API for compliance checks
-- [ ] Frontend interface
+Repo is ready-to-run: ingestion (with OCR), chunking, embeddings, hybrid retrieval, and API with evidence debug.
 
 ## 🏛️ Legal Documents
 
@@ -217,4 +207,24 @@ This project processes UK legal documents which are Crown Copyright but availabl
 - Pipeline auto-OCRs PDFs when layout extraction is poor and normalizes text.
 - You can add business policy files as `.txt`; they will be retrieved and clearly cited as policy (not statute).
 - Use `/classify_debug` to inspect evidence if a product seems misclassified, then refine sources.
+
+## 🚧 Possible Improvements
+
+- Retrieval quality
+  - Add per-source weighting (statute > guidance > policy) with tie‑breaks.
+  - Learnable re-ranking (e.g., SVM/LightGBM on features: cosine, BM25, rarity, chunk length, boilerplate score).
+  - FAISS/AnnLite vector index for faster search on larger corpora.
+- Ingestion/normalization
+  - Table extraction where structure matters (pdfplumber tables) and layout‑aware heuristics per document template.
+  - Automatic de‑duplication and boilerplate masking across acts (“Document Generated…”, “PART X”).
+- Product understanding
+  - Config‑driven ontology and synonyms (JSON) with deterministic category mapping prior to retrieval.
+  - Optional LLM pass to canonicalize messy product strings (brand/size -> normalized features).
+- LLM reasoning
+  - Add a strict JSON schema with allowed enums and citation checks (require section names in evidence).
+  - Multi‑prompt strategy: statute‑first; fallback to guidance/policy.
+- Governance & ops
+  - Policy document versioning, validity windows, and audit logs (who added/changed rules).
+  - Rate limiting and request logging in the API; `/metrics` for observability.
+  - CI: lint (pylint), format (black/isort), tests (pytest) for pipeline and retrieval.
 
