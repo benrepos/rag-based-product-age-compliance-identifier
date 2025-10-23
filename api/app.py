@@ -44,18 +44,23 @@ classifier = None
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize retriever and classifier on startup"""
+    """Initialize components without failing the server if assets are missing."""
     global retriever, classifier
-    
-    print("\n🚀 Initializing RAG pipeline...")
-    
-    # Initialize retriever (loads embeddings)
-    retriever = LawRetriever(embeddings_file="embeddings/embeddings_store.pkl")
-    
-    # Initialize classifier
-    classifier = AgeRestrictionClassifier(model="gpt-5-nano", temperature=1)
-    
-    print("✅ RAG pipeline ready!\n")
+    print("\n🚀 Initializing API...")
+    # Initialize classifier (does not require embeddings)
+    try:
+        classifier = AgeRestrictionClassifier(model="gpt-5-nano", temperature=1)
+    except Exception as exc:  # pragma: no cover
+        print(f"⚠️ Classifier init failed: {exc}")
+        classifier = None
+    # Try to load retriever; if embeddings unavailable, defer to first request
+    try:
+        retriever = LawRetriever(embeddings_file="embeddings/embeddings_store.pkl")
+        print("✅ Embeddings loaded")
+    except Exception as exc:  # pragma: no cover
+        print(f"⚠️ Retriever init deferred: {exc}")
+        retriever = None
+    print("✅ Startup complete\n")
 
 
 @app.get("/")
@@ -85,6 +90,10 @@ async def classify_product(
     3. Return structured classification with metadata
     """
     try:
+        # Lazy-load retriever on first request if needed
+        global retriever
+        if retriever is None:
+            retriever = LawRetriever(embeddings_file="embeddings/embeddings_store.pkl")
         # Step 1: Retrieve relevant law chunks
         relevant_chunks = retriever.retrieve_relevant_chunks(
             query=request.product_description,
@@ -99,6 +108,11 @@ async def classify_product(
         
         return result
         
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Embeddings not available: {e}. Rebuild image with embeddings or run pipeline first."
+        )
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -131,6 +145,10 @@ async def classify_product_debug(
     production response model of /classify.
     """
     try:
+        # Lazy-load retriever on first request if needed
+        global retriever
+        if retriever is None:
+            retriever = LawRetriever(embeddings_file="embeddings/embeddings_store.pkl")
         # Step 1: Retrieve relevant law chunks
         relevant_chunks = retriever.retrieve_relevant_chunks(
             query=request.product_description,
@@ -161,6 +179,11 @@ async def classify_product_debug(
             'evidence': evidence_view
         }
 
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Embeddings not available: {e}. Rebuild image with embeddings or run pipeline first."
+        )
     except Exception as e:
         raise HTTPException(
             status_code=500,
