@@ -1,0 +1,30 @@
+Policy: Compressed gases (butane, CO2) — 18+
+Source type: policy
+Jurisdiction: UK (ecommerce)
+Effective date: 2025-10-22
+Review date: 2026-04-01
+Owner: Compliance
+
+Rule:
+- All compressed gas cylinders and bottles are 18+ for online sale and delivery.
+- Examples (non-exhaustive): CO2 bottle, CO2 cylinder, dispense gas, Argon/CO2 mix, disposable butane gas bottle, gas cylinder, gas canister, compressed gas.
+
+Rationale:
+- Aligns with Trading Standards/retailer guidance and common delivery partner requirements to prevent under-18 access where statute is silent or fragmented.
+- Treats compressed gases consistently with other age-restricted product handling in ecommerce.
+
+Synonyms (for retrieval/matching):
+- "co2 bottle", "co2 cylinder", "dispense gas", "argon/co2 mix", "disposable butane gas bottle", "butane gas bottle", "gas cylinder", "gas canister", "compressed gas", "600g co2", "sodastream cylinder".
+
+Exceptions / notes:
+- Cigarette lighter refills containing butane are already legally 18+ under The Cigarette Lighter Refill (Safety) Regulations 1999; this policy reaffirms but does not replace that statute.
+- Where local laws impose stricter rules, obey the strictest requirement.
+
+Citations / Links (guidance/policy references):
+- Association of Convenience Stores (ACS) guidance on age-restricted sales (retrieval copy ingested in this system)
+- Trading Standards retailer advice (local authority publications)
+- Delivery partner age-verification requirements (e.g., ID on delivery)
+
+Provenance:
+- This is a company policy to be applied where the retrieved law does not explicitly cover the product type.
+- Include this policy in evidence when determining ecommerce age restrictions for compressed gases.
