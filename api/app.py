@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 from rag_pipeline import LawRetriever
 from llm import AgeRestrictionClassifier, ClassificationResponse
+from llm.prior import get_prior_cached
 from config import OPENAI_API_KEY, API_KEY  # ensures .env is loaded via config module
 
 # Load environment variables from .env if present
@@ -94,9 +95,15 @@ async def classify_product(
         global retriever
         if retriever is None:
             retriever = LawRetriever(embeddings_file="embeddings/embeddings_store.pkl")
-        # Step 1: Retrieve relevant law chunks
+
+        # Stage A: Prior (advisory)
+        prior = get_prior_cached(request.product_description)
+        expansion_terms = " ".join(prior.get("law_hints", []) + prior.get("query_expansion_terms", []))
+        expanded_query = f"{request.product_description} {expansion_terms}".strip()
+
+        # Step 1: Retrieve relevant law chunks using expanded query
         relevant_chunks = retriever.retrieve_relevant_chunks(
-            query=request.product_description,
+            query=expanded_query,
             k=request.k
         )
         
@@ -149,9 +156,15 @@ async def classify_product_debug(
         global retriever
         if retriever is None:
             retriever = LawRetriever(embeddings_file="embeddings/embeddings_store.pkl")
-        # Step 1: Retrieve relevant law chunks
+
+        # Stage A: Prior (advisory) for debug visibility
+        prior = get_prior_cached(request.product_description)
+        expansion_terms = " ".join(prior.get("law_hints", []) + prior.get("query_expansion_terms", []))
+        expanded_query = f"{request.product_description} {expansion_terms}".strip()
+
+        # Step 1: Retrieve relevant law chunks with expanded query
         relevant_chunks = retriever.retrieve_relevant_chunks(
-            query=request.product_description,
+            query=expanded_query,
             k=request.k
         )
 
@@ -175,6 +188,7 @@ async def classify_product_debug(
         )
 
         return {
+            'prior': prior,
             'classification': result,
             'evidence': evidence_view
         }

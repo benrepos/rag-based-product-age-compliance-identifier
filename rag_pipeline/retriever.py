@@ -14,8 +14,6 @@ from openai import OpenAI
 
 from .similarity import cosine_similarity_batch, get_top_k_indices
  
-
-
 class LawRetriever:
     """Retrieves relevant law chunks based on query similarity"""
     
