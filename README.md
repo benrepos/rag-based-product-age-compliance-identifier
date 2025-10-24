@@ -8,7 +8,7 @@ This system uses UK legislation and optionally business policy documents to dete
 - Smart ingestion with OCR fallback for difficult PDFs (leaflets/tables)
 - Content-aware chunking (Acts vs guidance leaflets)
 - Hybrid retrieval (dense cosine + BM25 sparse + light lexical)
-- LLM reasoning with Pydantic-validated output and evidence debugging
+- LLM prior (open‑book UK knowledge) to guide retrieval + LLM reasoning with Pydantic‑validated output and evidence debugging
 
 ## 📁 Project Structure
 
@@ -108,7 +108,9 @@ Endpoints:
   - Body: `{ "product_description": "Bottle of red wine 12% ABV", "k": 5 }`
   - Returns: Pydantic `ClassificationResponse` (restriction_level, confidence, reason, evidence + metadata)
 - `POST /classify_debug`
-  - Same request as `/classify`, response additionally includes `evidence` array with top‑k chunks and similarity scores used for the LLM.
+  - Same request as `/classify`, response additionally includes:
+    - `prior` (model’s advisory guess: category, expected restriction, hints)
+    - `evidence` array with top‑k chunks and similarity scores used for the LLM.
 - `GET /health` and `GET /` for health checks
 
 Typical workflow:
@@ -129,6 +131,14 @@ curl -s -X POST http://localhost:8000/classify_debug \
 Notes:
 - Increase `k` (e.g., 15–30) for more robust retrieval on rare terms.
 - If you see boilerplate headings in evidence, the hybrid retriever will still return policy/statute chunks; use `/classify_debug` to validate.
+
+### LLM Prior (advisory) and caching
+
+- The API runs a light “prior” step first (open‑book UK knowledge) using `gpt-4o-mini`:
+  - Output: `category_guess`, `expected_restriction`, `rationale_short`, `law_hints`, `query_expansion_terms`.
+  - Retrieval query is expanded with these hints/terms, improving recall (e.g., alcohol → s.146 hints).
+  - The final classification remains evidence‑only; the prior is advisory and visible in `/classify_debug`.
+- Prior calls are cached in‑process with LRU (512 entries). The cache resets when the process restarts.
 
 ## ✅ Status
 
@@ -156,6 +166,11 @@ Repo is ready-to-run: ingestion (with OCR), chunking, embeddings, hybrid retriev
 - Embeddings: OpenAI `text-embedding-3-small` (1536 dims)
 - Hybrid retrieval: 0.60 cosine + 0.30 BM25 + 0.10 lexical overlap; boilerplate penalty for generic headings
 - Evidence debug: `POST /classify_debug` shows top‑k with scores/snippets
+
+### Deployment (Cloud Run)
+- The container listens on `0.0.0.0:$PORT` (Cloud Run injects `PORT`).
+- Command: `uvicorn api.app:app --host 0.0.0.0 --port ${PORT:-8080}`
+- Set `OPENAI_API_KEY` (required) and optionally `API_KEY` for header auth.
 
 ### Chunk Metadata Structure
 ```json
